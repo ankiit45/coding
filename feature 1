@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Rating Bar Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: RatingPage(),
+    );
+  }
+}
+
+class RatingPage extends StatefulWidget {
+  @override
+  _RatingPageState createState() => _RatingPageState();
+}
+
+class _RatingPageState extends State<RatingPage> {
+  double _rating = 0;
+
+  // Create a method to build the rating stars
+  Widget buildRatingStar(int index) {
+    Icon icon;
+    if (_rating >= index) {
+      icon = Icon(Icons.star, color: Colors.amber); // Filled star
+    } else if (_rating >= index - 0.5) {
+      icon = Icon(Icons.star_half, color: Colors.amber); // Half star
+    } else {
+      icon = Icon(Icons.star_border, color: Colors.amber); // Empty star
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _rating = index.toDouble();
+        });
+      },
+      child: icon,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Rating Bar Example'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Rating stars
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(5, (index) {
+                return Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: buildRatingStar(index + 1),
+                );
+              }),
+            ),
+            SizedBox(height: 20),
+            // Display current rating value
+            Text(
+              'Your Rating: ${_rating.toStringAsFixed(1)}',
+              style: TextStyle(fontSize: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
