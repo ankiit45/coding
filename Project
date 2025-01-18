@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Ball Bounce Game',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: BallBounceGame(),
+    );
+  }
+}
+
+class BallBounceGame extends StatefulWidget {
+  @override
+  _BallBounceGameState createState() => _BallBounceGameState();
+}
+
+class _BallBounceGameState extends State<BallBounceGame> {
+  double ballX = 0.5; // Ball's X position, in terms of percentage (0 to 1)
+  double ballY = 0.5; // Ball's Y position, in terms of percentage (0 to 1)
+  double ballDX = 0.01; // Ball's movement on X-axis
+  double ballDY = 0.01; // Ball's movement on Y-axis
+  double ballRadius = 0.05; // Ball's radius (as a fraction of screen width/height)
+  
+  double paddleX = 0.5; // Paddle's X position, in terms of percentage (0 to 1)
+  double paddleWidth = 0.2; // Paddle width as a fraction of screen width
+  
+  int score = 0;
+  bool isGameOver = false;
+  late Timer gameLoop;
+
+  @override
+  void initState() {
+    super.initState();
+    startGame();
+  }
+
+  void startGame() {
+    setState(() {
+      score = 0;
+      ballX = 0.5;
+      ballY = 0.5;
+      ballDX = 0.01;
+      ballDY = 0.01;
+      isGameOver = false;
+    });
+
+    gameLoop = Timer.periodic(Duration(milliseconds: 16), (timer) {
+      setState(() {
+        if (isGameOver) return;
+
+        // Move ball
+        ballX += ballDX;
+        ballY += ballDY;
+
+        // Ball bouncing off walls
+        if (ballX <= 0 || ballX >= 1) {
+          ballDX = -ballDX; // Reverse X direction when hitting left or right wall
+        }
+        if (ballY <= 0) {
+          ballDY = -ballDY; // Reverse Y direction when hitting top wall
+        }
+
+        // Ball hitting the paddle
+        if (ballY >= 0.95 && ballX >= paddleX - paddleWidth / 2 && ballX <= paddleX + paddleWidth / 2) {
+          ballDY = -ballDY; // Reverse Y direction when hitting the paddle
+          score++;
+        }
+
+        // Ball falling off screen (Game Over)
+        if (ballY >= 1) {
+          isGameOver = true;
+          gameLoop.cancel();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    gameLoop.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Ball Bounce Game'),
+        centerTitle: true,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          double screenWidth = constraints.maxWidth;
+          double screenHeight = constraints.maxHeight;
+
+          return GestureDetector(
+            onHorizontalDragUpdate: (details) {
+              setState(() {
+                // Move paddle based on user drag
+                paddleX = (details.localPosition.dx / screenWidth).clamp(0.0, 1.0);
+              });
+            },
+            child: Stack(
+              children: [
+                // Background color
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.lightBlue[50],
+                  ),
+                ),
+
+                // Ball
+                Positioned(
+                  top: ballY * screenHeight - ballRadius * screenHeight,
+                  left: ballX * screenWidth - ballRadius * screenWidth,
+                  child: Container(
+                    width: ballRadius * screenWidth * 2,
+                    height: ballRadius * screenHeight * 2,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+
+                // Paddle
+                Positioned(
+                  bottom: 0,
+                  left: paddleX * screenWidth - paddleWidth * screenWidth / 2,
+                  child: Container(
+                    width: paddleWidth * screenWidth,
+                    height: 20,
+                    color: Colors.green,
+                  ),
+                ),
+
+                // Score display
+                if (!isGameOver)
+                  Positioned(
+                    top: 30,
+                    left: 20,
+                    child: Text(
+                      'Score: $score',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+
+                // Game Over screen
+                if (isGameOver)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Game Over',
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                        Text(
+                          'Final Score: $score',
+                          style: TextStyle(fontSize: 30),
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: startGame,
+                          child: Text('Restart'),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
